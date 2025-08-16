@@ -1,0 +1,9 @@
+# Ignore build folders anywhere
+**/build/
+**/build-arm/
+
+# Ignore common CMake generated files anywhere
+**/CMakeFiles/
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/Makefile
