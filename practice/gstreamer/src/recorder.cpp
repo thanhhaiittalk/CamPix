@@ -76,6 +76,7 @@ void Recorder::requestStop() {
 
 // Run loop until EOS or error
 void Recorder::run() {
+    const GstClockTime timeout = GST_MSECOND * 100;
     while (true)
     {
         // Check for Ctrl-C
@@ -85,10 +86,10 @@ void Recorder::run() {
             g_print("[RUN] EOS requested\n");
         }
         GstMessage *msg = gst_bus_timed_pop_filtered(
-            bus_, GST_CLOCK_TIME_NONE, (GstMessageType)(GST_MESSAGE_EOS | GST_MESSAGE_ERROR));
+            bus_, timeout, (GstMessageType)(GST_MESSAGE_EOS | GST_MESSAGE_ERROR));
         if (!msg) continue;
         if (GST_MESSAGE_TYPE(msg) == GST_MESSAGE_EOS) {
-            g_print("[RUN] Messagae EOS\n");
+            g_print("[RUN] Message EOS\n");
             gst_message_unref(msg);
             return;
         } else if (GST_MESSAGE_TYPE(msg) == GST_MESSAGE_ERROR) {
@@ -165,10 +166,13 @@ bool Recorder::buildPipeline() {
     // Encoder properties
     if (encoder_ == "v4l2h264enc") {
         std::cout <<"Debug buildPipeline: set encoder v4l2h264enc\n";
-        // v4l2h264enc uses V4L2 controls (bitrate in bps)
-        // std::string controls = "controls,video_bitrate=" + std::to_string(bitrate_) + ";";
-        // g_object_set(G_OBJECT(enc_), "extra-controls", controls.c_str(), NULL);
-        g_object_set(G_OBJECT(enc_), "bitrate", bitrate_, NULL);
+        GstStructure *s = gst_structure_new(
+        "controls",
+        "video_bitrate", G_TYPE_INT, bitrate_,
+        NULL);
+
+        g_object_set(G_OBJECT(enc_), "extra-controls", s, NULL);
+        gst_structure_free(s); // free after set
     } else if (encoder_ == "x264enc") {
         // x264enc 'bitrate' is in kbps
         int kbps = (bitrate_ > 0) ? (bitrate_ / 1000) : 4000;

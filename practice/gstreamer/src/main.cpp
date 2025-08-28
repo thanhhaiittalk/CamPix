@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
             record.init();
 
             record.start();
-            
+
             record.run();
 
             record.stop();
